@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define TAILLE_TABLEAU 95                                                                                                               
 #define PREMIER_CARACTERE 32    
 
-int ALPHABET[TAILLE_TABLEAU];
+int alphabet[TAILLE_TABLEAU];
 
 typedef struct caractere_occurence{
     char caractere;
@@ -17,30 +18,37 @@ typedef struct caractere_occurence{
     :return -> un tableau (de type enregistrement) qui contient chaque caractere contenus dans le mot avec son nombre d'occurence chacun
 */
 
-void compterOccurenceMot(){
-    char *chaine = "maman";
-    for(int i=0; i < 5; i++)
+void compterOccurenceMot(char *cheminVersFichier){
+    char caractereLu;
+    FILE *fichierACompressser;
+    if ((fichierACompressser = fopen(cheminVersFichier,"r")) == NULL)
     {
-        char car = chaine[i];
-        ALPHABET[car - PREMIER_CARACTERE]++;
+      fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n",cheminVersFichier);
+      exit(1);
     }
+    while ((caractereLu = fgetc(fichierACompressser)) != EOF)
+    {
+        int indice = caractereLu - PREMIER_CARACTERE; //indice represente l'indice du caractere lu dans le tableau
+        if(indice >= 0 && indice < TAILLE_TABLEAU)
+            alphabet[indice]++;
+    }
+    fclose(fichierACompressser);
     
     for(int i = 0; i < TAILLE_TABLEAU; i++)
-        if(ALPHABET[i] != 0)
-            printf("car == %c , nbocc == %d\n", i + PREMIER_CARACTERE, ALPHABET[i]);
+        if(alphabet[i] != 0)
+            printf("car == %c , nbocc == %d\n", i + PREMIER_CARACTERE, alphabet[i]);
    
 }
 
 
+int main(int nbArgument, char *parametres[]){
+    if(nbArgument != 2)
+    {
+        printf("Usage: %s fichier\n\n", parametres[0]);
+        exit(1);
+    }
 
-
-int main(){
-
-
-
-    //code test pour compter le nombre d'occurence d'un mot 
-
-    compterOccurenceMot();
+    compterOccurenceMot(parametres[1]);
     
     return 0;
 }
