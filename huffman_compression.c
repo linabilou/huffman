@@ -10,6 +10,7 @@
 typedef struct caractereOccurence{
     char caractere;
     int occurence;
+    char code[TAILLE_TABLEAU];
 }caractereOccurence;
 
 /*
@@ -22,7 +23,9 @@ caractereOccurence alphabet[TAILLE_TABLEAU];
 /*
 - Le tableau noeudParent contient les racines obtenus a partir de la somme des occurences selon le principe de huffman
 */
-caractereOccurence noeudParent[TAILLE_TABLEAU]; 
+int noeudParent[TAILLE_TABLEAU]; 
+
+
 
 /*
 cette fonction permet d'initialiser le tableau de l'alphabet
@@ -34,6 +37,7 @@ void initialisationTableauAlphabet(){
     {
         alphabet[indice].caractere = indice;
         alphabet[indice].occurence = 0;
+        strcpy(alphabet[indice].code, "");
     }
 }
 
@@ -76,9 +80,10 @@ void compterOccurenceMot(char *cheminVersFichier){
     qsort(alphabet, TAILLE_TABLEAU, sizeof(caractereOccurence), fonctionDeComparaison);
 
   
-    for(int indice = 0; indice < TAILLE_TABLEAU; indice++)
-        if(alphabet[indice].occurence != 0)
-            printf("caractere == %c , nboccurence == %d\n", alphabet[indice].caractere + PREMIER_CARACTERE, alphabet[indice].occurence);
+    // for(int indice = 0; indice < TAILLE_TABLEAU; indice++)
+    //    if(alphabet[indice].occurence != 0)
+    //        printf("caractere == %c , nboccurence == %d, code == %s\n", alphabet[indice].caractere + PREMIER_CARACTERE, alphabet[indice].occurence, alphabet[indice].code);
+
 }
 
 
@@ -90,24 +95,49 @@ void compterOccurenceMot(char *cheminVersFichier){
 */
 
 void construireArbre(){
-    int i = 0, racine = 0; 
-    while(i < TAILLE_TABLEAU && alphabet[i].occurence == 0)
-        i++;
-    
-    if(TAILLE_TABLEAU - i <= 1 )
-       racine = i;
+    int feuille = 0, racine = 0, k; 
+
+    printf("\nDebut de la construction de l'arbre\n\n");
+    printf("             .........             \n\n");
+    while(feuille < TAILLE_TABLEAU && alphabet[feuille].occurence == 0)
+        feuille++;
+
+    if(TAILLE_TABLEAU - feuille <= 1 )
+       racine = feuille;
     else{
-        noeudParent[racine].occurence = alphabet[i].occurence + alphabet[i + 1].occurence;
+        noeudParent[racine] = alphabet[feuille].occurence + alphabet[feuille + 1].occurence;
         racine++;
-        for(int k=i+2; k<TAILLE_TABLEAU; k++){
-            noeudParent[racine].occurence = alphabet[k].occurence + noeudParent[racine -1].occurence;
+        for(k = feuille+2; k < TAILLE_TABLEAU; k++){
+            noeudParent[racine] = alphabet[k].occurence + noeudParent[racine -1];
             racine++;
         }
     }
-    
+    printf("\nFin de la construction de l'arbre\n\n");
+
+    racine--;
+    feuille = --k;
+    printf("\nDebut de construction des codes\n\n");
+    char chaine[TAILLE_TABLEAU] = ""; //on se met au niveau de la racine pour commencer le parcours
+    while(racine >= 1){
+        strcpy(alphabet[feuille].code, chaine);
+        if(noeudParent[racine - 1] > alphabet[feuille].occurence){
+            strcat(alphabet[feuille].code, "0");
+            strcat(chaine, "1"); //chaine = chaine + 1
+        }else{
+            strcat(alphabet[feuille].code, "1");
+            strcat(chaine, "0");
+        }
+        feuille--;
+        racine--; 
+    }
+
+    strcat(strcpy(alphabet[feuille].code, chaine), "1");
+    strcat(strcpy(alphabet[feuille - 1].code, chaine), "0");
+
     for(int indice = 0; indice < TAILLE_TABLEAU; indice++)
-        if(noeudParent[indice].occurence != 0)
-            printf(" racine == %d\n", noeudParent[indice].occurence);
+       if(alphabet[indice].occurence != 0)
+           printf("id == %d, caractere == %c , nboccurence == %d, code == %s\n", indice, alphabet[indice].caractere + PREMIER_CARACTERE, alphabet[indice].occurence, alphabet[indice].code);
+    printf("\nFin de construction des codes\n\n");
 }
 
 int main(int nbArgument, char *parametres[]){
@@ -118,8 +148,6 @@ int main(int nbArgument, char *parametres[]){
 
     initialisationTableauAlphabet();
     compterOccurenceMot(parametres[1]);
-
-    construireArbre();
-    
+    construireArbre();    
     return 0;
 }
