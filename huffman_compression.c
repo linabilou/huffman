@@ -123,7 +123,6 @@ void ArbreDeCompression(){
     	printf("\nFin de construction des codes\n\n");
 }
 
-
 /* Ecrire les frequences dans un fichier */
 void enregistrerFrequence()
 {
@@ -135,6 +134,7 @@ void enregistrerFrequence()
 		{
 			char caractere = alphabet[indice].caractere;
 			int occurence = alphabet[indice].occurence;
+       		fprintf(fichierArbre, "%d %d\n", caractere, occurence);	
 		}
 	}
 	fclose(fichierArbre);
@@ -178,6 +178,7 @@ void enregistrerFichierCompresser(char *cheminVersFichier)
 	printf("		1- fichierCompresse : contient le texte compresse\n");
 	printf("		2- cleDecompression : la cle qui va permettre de decompresser\n\n");
 }
+
 
 int main(int nbArgument, char *parametres[]){
     if(nbArgument != 2){

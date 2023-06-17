@@ -1,5 +1,6 @@
-# Code de Compression et de decompression de Huffman
+# Code de Compression et de decompression de Huffman : Version 1.0
 
+# Reference utilise pour ecrire le code : https://www.programiz.com/dsa/huffman-coding
 
 # Description
 
@@ -71,4 +72,6 @@ Description detaille de chaque fonction
     - Permet d'enregistrer le fichier compresse
 
 # PRINCIPE DE DECOMPRESSION # 
-...
+
+# La fonction void lireCleDecompression(char *cheminVersFichier) 
+    - Permet de lire le contenu de la cle de decompression et inscrire dans le tableau alphabet
