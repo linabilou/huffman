@@ -63,6 +63,7 @@ Description detaille de chaque fonction
 
 # La fonction ArbreDeCompression()
     - Permet de construire l'arbre binaire de compression selon le principe de huffman
+    - On associe ensuite les codes 0 - 1 selon le principe a gauche 0 et a droite 1 tout en comparant aussi 
 
 # La fonction void enregistrerFrequence()
     - Permet d'ecrire les caracteres sous leur valeur numerique ascii et leur frequences ou occurences 
@@ -75,3 +76,14 @@ Description detaille de chaque fonction
 
 # La fonction void lireCleDecompression(char *cheminVersFichier) 
     - Permet de lire le contenu de la cle de decompression et inscrire dans le tableau alphabet
+
+*Construction de l'arbre pour la decompression de huffman */
+# La fonction int trouveFeuille(int feuilleTemp, int racineTemp, char caractere)
+    - Permet lors de la descente du parcours de l'arbre se savoir si nous sommes deja arrives
+
+# La fonction void compareFeuille(int feuilleTemp, char caractere)
+    - Permet de comparer deux feuilles notamment les toutes premieres feuilles au bas de l'arbre
+
+# La fonction ArbreDeDecompression()
+    - 
+

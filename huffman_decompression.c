@@ -2,167 +2,186 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAILLE_TABLEAU 128   //pour ne traiter que les caracteres imprimable du code ascii
+#define CARDINAL 128 //Nous travaillons ici avec le code ASCII uniquement
 
 
-typedef struct caractereOccurence{
-	char caractere;
-	int occurence;
-	char code[TAILLE_TABLEAU];
-	char arc;
-}caractereOccurence;
-
-/* Le tableau alphabet contient les caracteres ascii 32-126 d'ou la taille 95 (127-32) - les caracteres ascii possibles et leur donne d'occurence */
-caractereOccurence alphabet[TAILLE_TABLEAU]; 
-
-/* Le tableau noeudParent contient les racines obtenus a partir de la somme des occurences selon le principe de huffman */
-int noeudParent[TAILLE_TABLEAU]; 
-
-int nbOccurence = 0;
-
-char *texte;
-
-FILE *sortie;
-
-/*Initialisation de notre alphabet de caractere */
-void initialisationTableauAlphabet()
+typedef struct caractereOccurences
 {
-	for(int indice = 0; indice < TAILLE_TABLEAU; indice++)
-	{	
-        	alphabet[indice].caractere = indice;
-        	alphabet[indice].occurence = 0;
-        	strcpy(alphabet[indice].code, "");
-    	}
-}
+	int caractere;
+	int occurences;
+	char code[CARDINAL];
+	struct caractereOccurences *gauche;
+	struct caractereOccurences *droite;
+	struct caractereOccurences *suivant;
+}caractereOccurences;
 
+caractereOccurences alphabet[CARDINAL];
+caractereOccurences *racine;
 
-/*lire le contenu de la cle de decompression et inscrire dans l'alphabet*/
-void lireCleDecompression(char *cheminVersFichier)
+int caracteresApparus = 0; //Total de caractere reelement apparu
+char *fichierDecompresse = "fichierDecompresse"; //chemin vers le fichier decompresse
+
+//Mettre toutes les occurences a zero
+void initialisation()
 {
-	char caractereLu;
-    	FILE *fichierADecompresser;
-    	if ((fichierADecompresser = fopen(cheminVersFichier,"r")) == NULL){
-      		fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n",cheminVersFichier);
-      		exit(1);
-    	}
-
-	int nbLignes;
-	fscanf(fichierADecompresser, "%d\n", &nbLignes);
-	nbOccurence = nbLignes;
-	for(int ligne = 0; ligne < nbLignes; ligne++)
+	printf("\n		Debut Initialisation du tableau alphabet \n");
+	printf("			  ....................		\n");
+	for(int id = 0; id < CARDINAL; id++)
 	{
-		int caractere;
-		int occurence;
-
-		fscanf(fichierADecompresser, "%d %d\n", &caractere, &occurence);
-		alphabet[ligne].caractere = (char)caractere;
-		alphabet[ligne].occurence = occurence;
-		printf("caractere en entier == %d , caractere en ascii == %c et nbOccurence == %d\n", caractere, (char)caractere, occurence); 
-
+		alphabet[id].caractere = 0;
+		alphabet[id].occurences = 0;
+        	strcpy(alphabet[id].code, "");
+		alphabet[id].gauche = NULL;
+		alphabet[id].droite = NULL;
+		alphabet[id].suivant = NULL;
 	}
-    	fclose(fichierADecompresser);
+	printf("			  ....................		\n");
+	printf("		Fin Initialisation du tableau alphabet \n\n");
 }
 
-/*Construction de l'arbre pour la decompression de huffman */
-int trouveFeuille(int feuilleTemp, int racineTemp, char caractere)
+void initialisationFile()
 {
-	if(caractere == '0')
+	racine = NULL;
+	for(int id = 0; id < CARDINAL; id++)
 	{
-		if(alphabet[feuilleTemp].arc == '0')
-			return 1;
-	}
-	else
-	{
-		if(alphabet[feuilleTemp].arc == '1')
-			return 1;
-	}
-	return 0;
-}
-
-void compareFeuille(int feuilleTemp, char caractere)
-{	
-	if(caractere == '0')
-		fprintf(sortie, "%c", alphabet[feuilleTemp - 1].caractere);
-	else
-		fprintf(sortie, "%c", alphabet[feuilleTemp].caractere);
-}
-
-void ArbreDeDecompression(char *cheminVersFichierCompresse)
-{
-   	int feuille = 0, racine = 0, k; 
-
-    	printf("\nDebut de la construction de l'arbre\n\n");
-    	printf("             .........             \n\n");
-
-    	if(TAILLE_TABLEAU - feuille <= 1 )
-       		racine = feuille;
-    	else
-	{
-		alphabet[feuille].arc = '0';
-		alphabet[feuille + 1].arc = '1';
-        	noeudParent[racine] = alphabet[feuille].occurence + alphabet[feuille + 1].occurence;
-        	racine++;
-        	for(k = feuille+2; k < nbOccurence; k++)
+		if(alphabet[id].occurences > 0)
 		{
-			if(noeudParent[racine - 1] > alphabet[k].occurence)
-				alphabet[k].arc = '0';
-			else
-				alphabet[k].arc = '1';
+			caractereOccurences *noeud = malloc(sizeof(caractereOccurences));
+			noeud->caractere = alphabet[id].caractere;
+			noeud->occurences = alphabet[id].occurences;
+			noeud->gauche = NULL;
+			noeud->droite = NULL;
+			noeud->suivant = racine;
+			racine = noeud;
+		}
+	}
+}
 
-            		noeudParent[racine] = alphabet[k].occurence + noeudParent[racine -1];
-            		racine++;
-        	}
-    	}
-    	printf("\nFin de la construction de l'arbre\n\n");
+//Compter les frequences d'apparutions des caracteres dans un fichier
+void compteOccurences(char *cheminVersFichier)
+{
+	printf("\n		Debut du comptage du nombre d'occurence\n");
+	printf("		          ...................\n");
+	FILE *fichier = fopen(cheminVersFichier, "r");
+	if(fichier == NULL)
+	{
+		printf("\n\n		ECHEC : Impossible d'ouvir le fichier \"%s\"\n", cheminVersFichier);
+		exit(1);
+	}
 
-    	racine--;
-    	feuille = --k;
+	fscanf(fichier, "%d\n", &caracteresApparus);
+	for(int ligne = 0; ligne < caracteresApparus; ligne++)	
+	{
+		int caractere, occurences;
+		fscanf(fichier, "%d %d\n", &caractere, &occurences);
+		alphabet[caractere].occurences = occurences;
+		alphabet[caractere].caractere = caractere;
+	}
 
-	FILE *fichierCompresse = fopen(cheminVersFichierCompresse, "r");
+	printf("		%d Caractere(s) apparus\n", caracteresApparus);
+	for(int id = 0; id < CARDINAL; id++)
+	{
+		int caractere = alphabet[id].caractere;
+		int occurences = alphabet[id].occurences;
+		if(occurences > 0)
+			printf("		car == %c | codeAscii == %d | nombre d'occurence == %d\n", caractere, caractere, occurences);
+	}
+	fclose(fichier);
+	printf("		          ...................\n");
+	printf("		Fin du comptage du nombre d'occurence\n\n");
+}
+
+
+caractereOccurences *extractionMinimum()
+{
+	if(racine->suivant == NULL)
+		return racine;
+	
+	caractereOccurences *parcourt = racine->suivant;
+	caractereOccurences *_min = racine;
+	caractereOccurences *precedent = racine;
+	caractereOccurences *precMin = racine;
+	while(parcourt != NULL)
+	{
+		if(parcourt->occurences < _min->occurences)
+		{
+			_min = parcourt;
+			precMin = precedent;
+		}
+		precedent = parcourt;
+		parcourt = parcourt->suivant;
+	}
+
+	if(_min == racine)
+		racine = _min->suivant;
+	else
+		precMin->suivant = _min->suivant;
+
+	_min->suivant = NULL;
+	return _min;
+}
+
+//Contruction de l'arbre
+void huffman()
+{
+	printf("\n		Debut de contruction de l'arbre\n");
+	printf("		      .................\n");
+
+	initialisationFile();
+	for(int id = 0; id < caracteresApparus - 1; id++)
+	{
+		caractereOccurences *noeud = malloc(sizeof(caractereOccurences));
+		noeud->gauche = extractionMinimum();
+		noeud->droite = extractionMinimum();
+		noeud->occurences = noeud->gauche->occurences + noeud->droite->occurences;
+		noeud->suivant = racine;
+		racine = noeud;
+	}
+	printf("		      .................\n");
+	printf("		Fin de contruction de l'arbre\n\n");
+}
+
+void decompression(char *cheminVersFichier)
+{
+	printf("		Debut decompression\n");
+	printf("		  ..............\n");
+	FILE *fichier = fopen(cheminVersFichier, "r");
+	FILE *sortie = fopen(fichierDecompresse, "w");
 	char bit;
-	int racineTemp = racine;
-	int feuilleTemp = feuille;
-	while((bit = fgetc(fichierCompresse)) != EOF)
+	caractereOccurences *parcourt = racine;
+	while((bit = fgetc(fichier)) != EOF)
 	{
-		int gauche, droite;
-		gauche = feuilleTemp;
-		droite = racineTemp;
-
-		if(racineTemp == 0)
-		{
-			compareFeuille(feuilleTemp, bit);
-			racineTemp = racine;
-			feuilleTemp = feuille;
-		}
-		else if(trouveFeuille(gauche, droite, bit))
-		{
-			fprintf(sortie, "%c", alphabet[feuilleTemp].caractere);
-			racineTemp = racine;
-			feuilleTemp = feuille;
-		}
+		if(bit == '0')
+			parcourt = parcourt->gauche;
 		else
+			parcourt = parcourt->droite;
+
+		if(parcourt->gauche == NULL)
 		{
-			racineTemp--;
-			feuilleTemp--;
+			fprintf(sortie, "%c", parcourt->caractere);
+			parcourt = racine;
 		}
 	}
-	printf("\n");
-	fclose(fichierCompresse);
-
+	fclose(fichier);
+	fclose(sortie);
+	printf("		  ..............\n");
+	printf("		Fin decompression\n\n");
 }
 
-
-int main(int nbArgument, char *parametres[])
+int main(int nbArg, char *arguments[])
 {
-    	if(nbArgument != 3)
+	if(nbArg != 3)
 	{
-        	printf("Usage: %s chemin/vers/fichier/compresse chemin/vers/cle/decompression \n\n", parametres[0]);
-        	exit(1);
-    	}
-	sortie = fopen("sortie", "w");
-	initialisationTableauAlphabet();
-    	lireCleDecompression(parametres[2]);
-    	ArbreDeDecompression(parametres[1]);    
-	fclose(sortie);
-    	return 0;
+		printf("\nUsage : \n	%s chemin/vers/fichier/compresse chemin/ver/la/cle\n\n", arguments[0]);
+		exit(0);
+	}
+
+	initialisation();
+	compteOccurences(arguments[2]);
+	huffman();
+	decompression(arguments[1]);
+
+	printf("		Decompression terminee avec SUCCESS\n");
+	printf("		\"%s\" contient le contenu decompresse\n\n", fichierDecompresse);
+	return 0;
 }
